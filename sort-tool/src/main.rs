@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use std::io::Read;
 
 mod radix_sort;
+mod merge_sort;
 
 #[derive(Parser, Debug)]
 struct Args {
