@@ -28,15 +28,15 @@ fn handle_client(stream: &mut TcpStream, load_balancer: &mut RoundRobinLoadBalan
     let server = load_balancer.next_server();
 
     let mut backend_server = TcpStream::connect(&server)
-        .expect(format!("Unable to connect server: {}", &server).as_str());
+        .unwrap_or_else(|_| panic!("Unable to connect server: {}", &server));
     println!("[*] connected to server: {}", &server);
 
     let mut reader = io::BufReader::new(stream.try_clone().expect("fail to clone tcpstream..."));
     let received: Vec<u8> = reader.fill_buf().unwrap().to_vec();
     reader.consume(received.len());
 
-    backend_server.write_all(&received[0..received.len()]);
-    backend_server.flush();
+    let _ = backend_server.write_all(&received[0..received.len()]);
+    let _ = backend_server.flush();
     println!("[*] Wrote data to server: {}", &server);
 
     let mut backend_reader = io::BufReader::new(&mut backend_server);
@@ -47,11 +47,11 @@ fn handle_client(stream: &mut TcpStream, load_balancer: &mut RoundRobinLoadBalan
         let backend_received: Vec<u8> = backend_reader.fill_buf().unwrap().to_vec();
         backend_reader.consume(backend_received.len());
 
-        stream_writer.write_all(&backend_received);
-        stream_writer.flush();
+        let _ = stream_writer.write_all(&backend_received);
+        let _ = stream_writer.flush();
 
         if backend_received.is_empty() {
-            stream.shutdown(std::net::Shutdown::Both);
+            let _ = stream.shutdown(std::net::Shutdown::Both);
             return;
         }
     }
