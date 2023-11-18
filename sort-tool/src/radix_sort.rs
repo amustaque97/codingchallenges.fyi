@@ -16,7 +16,8 @@ pub fn sort(mut list: Vec<String>) -> Vec<String> {
         }
         let mut temp = Vec::new();
         for x in 0..=125 {
-            temp.extend(arr[x].drain(..));
+            // temp.extend(arr[x].drain(..));
+            temp.append(&mut arr[x]);
         }
         list = temp;
     }
