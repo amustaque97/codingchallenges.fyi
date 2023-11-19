@@ -34,6 +34,9 @@ impl Parser {
     /// Iterate over next character
     /// it doesn't check if cursor > buf.len(), be careful!
     pub fn next(&mut self) -> char {
+        if self.cursor >= self.buf.len() {
+            panic!("Cannot parse input!");
+        }
         let mut chars = self.buf.chars().into_iter();
         let ch = chars.nth(self.cursor).unwrap();
         self.cursor += 1;
@@ -65,7 +68,7 @@ impl Parser {
 
     pub fn parse(&mut self) -> Value {
         let first_char = self.next();
-        dbg!(first_char.clone());
+        // dbg!(first_char.clone());
 
         match first_char {
             '+' => {
@@ -225,4 +228,20 @@ mod test {
         dbg!(val);
     }
 
+    #[test]
+    fn test_mixed_array() {
+        let input = "*4\r\n$5\r\nhello\r\n:-33\r\n:69\r\n+MIXED\r\n".to_string();
+        let mut p = Parser::new(input);
+        let val = p.parse();
+        dbg!(val);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_invalid_mixed_array() {
+        let input = "*5\r\n$5\r\nhello\r\n:-33\r\n:69\r\n+MIXED\r\n".to_string();
+        let mut p = Parser::new(input);
+        let val = p.parse();
+        dbg!(val);
+    }
 }
