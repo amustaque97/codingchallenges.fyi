@@ -1,4 +1,3 @@
-
 #![allow(dead_code)]
 
 #[derive(Debug)]
@@ -69,6 +68,15 @@ impl Parser {
         dbg!(first_char.clone());
 
         match first_char {
+            '+' => {
+                let string = self.next_command();
+                Value {
+                    null: false,
+                    value: Some(string),
+                    value_type: ValueType::SimpleString,
+                    array: Vec::new(),
+                }
+            }
             '$' => {
                 let string = self.next_command();
                 match string.as_str() {
@@ -159,4 +167,19 @@ mod test {
         dbg!(val);
     }
 
+    #[test]
+    fn test_simple_string() {
+        let input = "+OK\r\n".to_string();
+        let mut p = Parser::new(input);
+        let val = p.parse();
+        dbg!(val);
+    }
+
+    #[test]
+    fn test_simple_string_hello_world() {
+        let input = "+hello world\r\n".to_string();
+        let mut p = Parser::new(input);
+        let val = p.parse();
+        dbg!(val);
+    }
 }
