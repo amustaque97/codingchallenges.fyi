@@ -86,6 +86,15 @@ impl Parser {
                     null: false,
                 }
             }
+            ':' => {
+                let integer_str = self.next_command();
+                Value {
+                    value: Some(integer_str),
+                    value_type: ValueType::Integer,
+                    array: Vec::new(),
+                    null: false,
+                }
+            }
             '$' => {
                 let string = self.next_command();
                 match string.as_str() {
@@ -199,4 +208,21 @@ mod test {
         let val = p.parse();
         dbg!(val);
     }
+
+    #[test]
+    fn test_negative_integer() {
+        let input = ":-333\r\n".to_string();
+        let mut p = Parser::new(input);
+        let val = p.parse();
+        dbg!(val);
+    }
+
+    #[test]
+    fn test_postive_integer() {
+        let input = ":89\r\n".to_string();
+        let mut p = Parser::new(input);
+        let val = p.parse();
+        dbg!(val);
+    }
+
 }
