@@ -77,6 +77,15 @@ impl Parser {
                     array: Vec::new(),
                 }
             }
+            '-' => {
+                let string = self.next_command();
+                Value {
+                    value: Some(string),
+                    value_type: ValueType::Error,
+                    array: Vec::new(),
+                    null: false,
+                }
+            }
             '$' => {
                 let string = self.next_command();
                 match string.as_str() {
@@ -178,6 +187,14 @@ mod test {
     #[test]
     fn test_simple_string_hello_world() {
         let input = "+hello world\r\n".to_string();
+        let mut p = Parser::new(input);
+        let val = p.parse();
+        dbg!(val);
+    }
+
+    #[test]
+    fn test_basic_error_message() {
+        let input = "-Error message\r\n".to_string();
         let mut p = Parser::new(input);
         let val = p.parse();
         dbg!(val);
