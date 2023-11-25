@@ -53,8 +53,8 @@ pub fn stringify(value: &Value) -> String {
             )
             .as_str();
         }
-        _ => {
-            todo!();
+        ValueType::Error => {
+            result += format!("-{}\r\n", value.value.clone().unwrap()).as_str();
         }
     }
 
