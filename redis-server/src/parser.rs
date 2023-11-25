@@ -29,6 +29,7 @@ pub fn stringify(value: &Value) -> String {
     // else we can directly append values to the result
     match value.value_type {
         ValueType::Array => {
+            result += format!("*{}\r\n", value.array.len()).as_str();
             for v in value.array.iter() {
                 let val = stringify(v);
                 result += &val;
@@ -43,6 +44,14 @@ pub fn stringify(value: &Value) -> String {
         }
         ValueType::Integer => {
             result += format!(":{}\r\n", value.value.clone().unwrap()).as_str();
+        }
+        ValueType::BulkString => {
+            result += format!(
+                "${}\r\n{}\r\n",
+                value.value.clone().unwrap().len(),
+                value.value.clone().unwrap()
+            )
+            .as_str();
         }
         _ => {
             todo!();
@@ -328,6 +337,18 @@ mod test {
             ],
         };
 
+        let s = stringify(&val);
+        dbg!(s);
+    }
+
+    #[test]
+    fn test_bulk_string() {
+        let val = Value {
+            value: Some("Hello".to_string()),
+            value_type: ValueType::BulkString,
+            null: false,
+            array: Vec::new(),
+        };
         let s = stringify(&val);
         dbg!(s);
     }
