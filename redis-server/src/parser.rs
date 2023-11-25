@@ -11,7 +11,7 @@ enum ValueType {
 }
 
 #[derive(Debug)]
-struct Value {
+pub(crate) struct Value {
     value: Option<String>,
     value_type: ValueType,
     null: bool,
@@ -21,6 +21,35 @@ struct Value {
 struct Parser {
     cursor: usize,
     buf: String,
+}
+pub fn stringify(value: &Value) -> String {
+    let mut result = String::new();
+
+    // if value type is array then we need to recurse
+    // else we can directly append values to the result
+    match value.value_type {
+        ValueType::Array => {
+            for v in value.array.iter() {
+                let val = stringify(v);
+                result += &val;
+            }
+        }
+        ValueType::SimpleString => {
+            result += format!("+{}", value.value.clone().unwrap()).as_str();
+            result.push_str("\r\n");
+        }
+        ValueType::Null => {
+            result += "$-1\r\n";
+        }
+        ValueType::Integer => {
+            result += format!(":{}\r\n", value.value.clone().unwrap()).as_str();
+        }
+        _ => {
+            todo!();
+        }
+    }
+
+    result
 }
 
 impl Parser {
@@ -37,7 +66,7 @@ impl Parser {
         if self.cursor >= self.buf.len() {
             panic!("Cannot parse input!");
         }
-        let mut chars = self.buf.chars().into_iter();
+        let mut chars = self.buf.chars();
         let ch = chars.nth(self.cursor).unwrap();
         self.cursor += 1;
         ch
@@ -243,5 +272,63 @@ mod test {
         let mut p = Parser::new(input);
         let val = p.parse();
         dbg!(val);
+    }
+
+    #[test]
+    fn test_simple_string_stringify() {
+        let val = Value {
+            value: Some("Hello".to_string()),
+            value_type: ValueType::SimpleString,
+            null: false,
+            array: Vec::new(),
+        };
+
+        let s = stringify(&val);
+        dbg!(s);
+    }
+
+    #[test]
+    fn test_null_stringify() {
+        let val = Value {
+            value: None,
+            value_type: ValueType::Null,
+            null: true,
+            array: Vec::new(),
+        };
+
+        let s = stringify(&val);
+        dbg!(s);
+    }
+
+    #[test]
+    fn test_simple_string_array_stringify() {
+        let val = Value {
+            value: None,
+            value_type: ValueType::Array,
+            null: false,
+            array: vec![
+                Value {
+                    value: Some("Hello".to_string()),
+                    value_type: ValueType::SimpleString,
+                    null: false,
+                    array: Vec::new(),
+                },
+                Value {
+                    value: Some("World".to_string()),
+                    value_type: ValueType::SimpleString,
+                    null: false,
+                    array: Vec::new(),
+                },
+                Value {
+                    value: Some("John".to_string()),
+                    value_type: ValueType::SimpleString,
+                    null: false,
+                    array: Vec::new(),
+                },
+            ],
+        };
+
+        let s = stringify(&val);
+        dbg!(s);
     }
 }
