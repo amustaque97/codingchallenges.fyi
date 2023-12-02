@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ValueType {
     SimpleString,
     Error,
@@ -10,7 +10,7 @@ pub enum ValueType {
     Array,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Value {
     pub value: Option<String>,
     pub value_type: ValueType,

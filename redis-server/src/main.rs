@@ -22,6 +22,9 @@ fn handle_connection(stream: TcpStream) {
         "PING" => {
             ping_command(stream);
         }
+        "ECHO" => {
+            echo_command(stream, value.array[1..].to_vec());
+        }
         _ => panic!("Invalid command {}", command),
     }
 }
@@ -32,9 +35,24 @@ fn ping_command(mut stream: TcpStream) {
         value: Some("PONG".to_string()),
         value_type: parser::ValueType::SimpleString,
         null: false,
-        array: Vec::new()
+        array: Vec::new(),
     };
     let _ = stream.write_all(parser::stringify(&pong).as_bytes());
+}
+
+/// Method to echo the same string which was sent by the client. NOTE
+/// `ECHO` command considers that the input will be only ECHO "<string>" where
+/// `<string>` can have n characters but inside the quotes. There are no other strings
+/// after that.
+fn echo_command(mut stream: TcpStream, values: Vec<Value>) {
+    let string = values[0].value.clone().unwrap_or("".to_string());
+    let reply = Value {
+        value: Some(string),
+        value_type: parser::ValueType::SimpleString,
+        null: false,
+        array: Vec::new(),
+    };
+    let _ = stream.write_all(parser::stringify(&reply).as_bytes());
 }
 
 /// Main entry point of the program, here in the code we're creating a server
