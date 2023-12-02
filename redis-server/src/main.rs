@@ -1,12 +1,14 @@
 use std::io::{self, BufRead, Write};
 use std::net::{TcpListener, TcpStream};
 
+use dictionary_server::DictionaryServer;
 use parser::Value;
 
+mod dictionary_server;
 mod parser;
 
 /// Basic setup on how to handle the connections and reply accordingly
-fn handle_connection(stream: TcpStream) {
+fn handle_connection(stream: TcpStream, map: &mut DictionaryServer) {
     let mut reader = io::BufReader::new(stream.try_clone().expect("fail to clone tcpstream..."));
     let received: Vec<u8> = reader.fill_buf().unwrap().to_vec();
     reader.consume(received.len());
@@ -24,6 +26,12 @@ fn handle_connection(stream: TcpStream) {
         }
         "ECHO" => {
             echo_command(stream, value.array[1..].to_vec());
+        }
+        "SET" | "set" => {
+            set_command(stream, value.array[1..].to_vec(), map);
+        }
+        "GET" | "get" => {
+            get_command(stream, value.array[1].clone(), map);
         }
         _ => panic!("Invalid command {}", command),
     }
@@ -55,14 +63,54 @@ fn echo_command(mut stream: TcpStream, values: Vec<Value>) {
     let _ = stream.write_all(parser::stringify(&reply).as_bytes());
 }
 
+/// wrapper around the dictionary i.e. `HashMap` to set the key, value and reply back 
+/// in RESP protocol to the client. If it is success reply will be "OK" else it should panic
+fn set_command(mut stream: TcpStream, values: Vec<Value>, map: &mut DictionaryServer) {
+    let key = values[0]
+        .value
+        .clone()
+        .expect("Unable to extract key from SET command");
+    let val = values[1]
+        .value
+        .clone()
+        .expect("Unable to extract value from SET command");
+
+    let _ = map.set(&key, &val);
+    let ok = Value {
+        value: Some("OK".to_string()),
+        value_type: parser::ValueType::SimpleString,
+        null: false,
+        array: Vec::new(),
+    };
+    let _ = stream.write_all(parser::stringify(&ok).as_bytes());
+}
+
+/// wrapper around the dictionary i.e. `HashMap` to retrive the key and reply back 
+/// in RESP protocol. If key is not present in the dictionary then return `nil` as response.
+fn get_command(mut stream: TcpStream, value: Value, map: &mut DictionaryServer) {
+    let key = value
+        .value
+        .clone()
+        .expect("Unable to extract key from GET command");
+    let reply = Value {
+        value: Some(map.get(&key)),
+        value_type: parser::ValueType::SimpleString,
+        null: false,
+        array: Vec::new(),
+    };
+    let _ = stream.write_all(parser::stringify(&reply).as_bytes());
+
+}
+
 /// Main entry point of the program, here in the code we're creating a server
 /// listening to the default redis port `6379`
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:6379").expect("Unable to bind address ::6379");
 
+    let mut map: DictionaryServer = DictionaryServer::new();
     for stream in listener.incoming() {
         match stream {
-            Ok(stream) => handle_connection(stream),
+            Ok(stream) => handle_connection(stream, &mut map),
             Err(e) => panic!("{}", e),
         }
     }
