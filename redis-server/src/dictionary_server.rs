@@ -1,5 +1,6 @@
 use std::{collections::HashMap, io::Result};
 
+#[derive(Debug, Clone)]
 pub struct DictionaryServer {
     pub server: HashMap<String, String>,
 }

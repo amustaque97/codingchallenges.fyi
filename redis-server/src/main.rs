@@ -1,5 +1,7 @@
 use std::io::{self, BufRead, Write};
 use std::net::{TcpListener, TcpStream};
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 use dictionary_server::DictionaryServer;
 use parser::Value;
@@ -63,7 +65,7 @@ fn echo_command(mut stream: TcpStream, values: Vec<Value>) {
     let _ = stream.write_all(parser::stringify(&reply).as_bytes());
 }
 
-/// wrapper around the dictionary i.e. `HashMap` to set the key, value and reply back 
+/// wrapper around the dictionary i.e. `HashMap` to set the key, value and reply back
 /// in RESP protocol to the client. If it is success reply will be "OK" else it should panic
 fn set_command(mut stream: TcpStream, values: Vec<Value>, map: &mut DictionaryServer) {
     let key = values[0]
@@ -85,7 +87,7 @@ fn set_command(mut stream: TcpStream, values: Vec<Value>, map: &mut DictionarySe
     let _ = stream.write_all(parser::stringify(&ok).as_bytes());
 }
 
-/// wrapper around the dictionary i.e. `HashMap` to retrive the key and reply back 
+/// wrapper around the dictionary i.e. `HashMap` to retrive the key and reply back
 /// in RESP protocol. If key is not present in the dictionary then return `nil` as response.
 fn get_command(mut stream: TcpStream, value: Value, map: &mut DictionaryServer) {
     let key = value
@@ -99,7 +101,6 @@ fn get_command(mut stream: TcpStream, value: Value, map: &mut DictionaryServer) 
         array: Vec::new(),
     };
     let _ = stream.write_all(parser::stringify(&reply).as_bytes());
-
 }
 
 /// Main entry point of the program, here in the code we're creating a server
@@ -107,10 +108,16 @@ fn get_command(mut stream: TcpStream, value: Value, map: &mut DictionaryServer) 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:6379").expect("Unable to bind address ::6379");
 
-    let mut map: DictionaryServer = DictionaryServer::new();
+    let map: Arc<Mutex<DictionaryServer>> = Arc::new(Mutex::new(DictionaryServer::new()));
     for stream in listener.incoming() {
         match stream {
-            Ok(stream) => handle_connection(stream, &mut map),
+            Ok(stream) => {
+                let m = map.clone();
+                let _ = thread::spawn(move || {
+                    handle_connection(stream, &mut m.lock().unwrap());
+                })
+                .join();
+            }
             Err(e) => panic!("{}", e),
         }
     }
