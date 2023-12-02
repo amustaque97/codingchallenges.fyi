@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-#[derive(Debug)]
-enum ValueType {
+#[derive(Debug, PartialEq)]
+pub enum ValueType {
     SimpleString,
     Error,
     Integer,
@@ -11,14 +11,14 @@ enum ValueType {
 }
 
 #[derive(Debug)]
-pub(crate) struct Value {
-    value: Option<String>,
-    value_type: ValueType,
-    null: bool,
-    array: Vec<Value>,
+pub struct Value {
+    pub value: Option<String>,
+    pub value_type: ValueType,
+    pub null: bool,
+    pub array: Vec<Value>,
 }
 
-struct Parser {
+pub struct Parser {
     cursor: usize,
     buf: String,
 }
