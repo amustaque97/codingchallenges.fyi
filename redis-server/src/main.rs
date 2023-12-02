@@ -17,6 +17,9 @@ fn handle_connection(stream: TcpStream, map: &mut DictionaryServer) {
 
     // println!("{}", String::from_utf8_lossy(&received[0..received.len()]));
     let command_str = String::from_utf8_lossy(&received[0..received.len()]).to_string();
+    if command_str.is_empty() {
+        return;
+    }
     let mut parser = parser::Parser::new(command_str);
     let value: Value = parser.parse();
 
@@ -35,7 +38,9 @@ fn handle_connection(stream: TcpStream, map: &mut DictionaryServer) {
         "GET" | "get" => {
             get_command(stream, value.array[1].clone(), map);
         }
-        _ => panic!("Invalid command {}", command),
+        _ => {
+            println!("Invalid command {}", command);
+        }
     }
 }
 
