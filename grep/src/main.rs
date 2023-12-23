@@ -34,8 +34,10 @@ fn main() {
     if pattern.is_empty() {
         print!("{}", content);
     } else {
-        let re = Regex::new(format!("\\b{}\\w*", pattern).as_str()).unwrap();
+        let re = Regex::new(format!(".*{}.*", pattern).as_str()).unwrap();
         let matches: Vec<_> = re.find_iter(&content).map(|m| m.as_str()).collect();
-        println!("{:?}", matches);
+        for ele in matches {
+            println!("{}", ele);
+        }
     }
 }
