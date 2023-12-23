@@ -1,6 +1,6 @@
 use std::{
     fs,
-    io::{Read, Write},
+    io::{Read, Write}, process::exit,
 };
 
 use clap::Parser;
@@ -36,8 +36,12 @@ fn main() {
     } else {
         let re = Regex::new(format!(".*{}.*", pattern).as_str()).unwrap();
         let matches: Vec<_> = re.find_iter(&content).map(|m| m.as_str()).collect();
-        for ele in matches {
+        for ele in matches.iter() {
             println!("{}", ele);
+        }
+
+        if matches.is_empty() {
+            exit(255);
         }
     }
 }
