@@ -79,12 +79,20 @@ fn main() {
     match Args::parse().command {
         Cmd::Init(ctx) => {
             initialise_empty_repo(ctx.repository_path);
+            upate_repo_head();
             upate_description_repo();
         }
         Cmd::Add(ctx) => {
             add_file_cotnent_to_index(ctx.files);
         }
     };
+}
+
+fn upate_repo_head() {
+    let content = "ref: refs/heads/main";
+    let mut file = fs::File::create(".git/HEAD").expect("Unable to open HEAD file!");
+    file.write_all(content.as_bytes())
+        .expect("Unable to update .git HEAD");
 }
 
 fn add_file_cotnent_to_index(files: Vec<PathBuf>) {
