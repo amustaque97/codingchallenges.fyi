@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand, ValueHint};
-use std::{env, fs, io::Write, path::PathBuf};
+use hex;
+use sha1::{Digest, Sha1};
+use std::{borrow::Cow, env, fs, io::Write, path::PathBuf};
 
 struct GitFile {
     name: &'static str,
@@ -54,6 +56,16 @@ struct Args {
 enum Cmd {
     /// Initializes an empty git repository.
     Init(InitCtx),
+
+    /// Add files to the staging area
+    Add(AddCtx),
+}
+
+#[derive(Parser, Debug)]
+struct AddCtx {
+    /// space separated files to add
+    #[clap(default_value = "./", value_hint = ValueHint::FilePath)]
+    files: Vec<PathBuf>,
 }
 
 #[derive(Parser, Debug)]
@@ -69,7 +81,31 @@ fn main() {
             initialise_empty_repo(ctx.repository_path);
             upate_description_repo();
         }
+        Cmd::Add(ctx) => {
+            add_file_cotnent_to_index(ctx.files);
+        }
     };
+}
+
+fn add_file_cotnent_to_index(files: Vec<PathBuf>) {
+    for file in files {
+        let hash = calc_hash_object(file);
+        println!("{}", hash);
+    }
+}
+
+fn calc_hash_object(file: PathBuf) -> Cow<'static, str> {
+    let content = fs::read_to_string(&file).unwrap();
+    let header = format!("blob {}\0", content.as_bytes().len());
+    let store = format!("{}{}", header, content);
+    calc_content_sha1(store).into()
+}
+
+fn calc_content_sha1(store: String) -> Cow<'static, str> {
+    let mut hasher = Sha1::new();
+    hasher.update(store.as_str());
+    let result = hasher.finalize().to_vec();
+    hex::encode(result).into()
 }
 
 fn upate_description_repo() {
